@@ -107,9 +107,7 @@ class DalleModel(torch.nn.Module):
         text_range += (self.vocab_size - self.text_seq_length)
         text_range = text_range.to(self.device)
         text = torch.where(text == 0, text_range, text)
-        if self.hf_version == 'v2':
-            # some hardcode :)
-            text = F.pad(text, (1, 0), value=2)
+
         text_pos = self.text_pos_embeddings(torch.arange(text.shape[1], device=self.device))
         text_embeddings = self.text_embeddings(text) + text_pos
         image_input_ids = input_ids[:, self.text_seq_length:]
@@ -120,11 +118,6 @@ class DalleModel(torch.nn.Module):
             embeddings = torch.cat((text_embeddings, image_embeddings), dim=1)
         else:
             embeddings = text_embeddings
-
-        if self.hf_version == 'v2':
-            # some hardcode :)
-            if embeddings.shape[1] > self.total_seq_length:
-                embeddings = embeddings[:, :-1]
 
         alpha = 0.1
         embeddings = embeddings * alpha + embeddings.detach() * (1-alpha)
@@ -137,7 +130,7 @@ class DalleModel(torch.nn.Module):
 
         logits = self.to_logits(transformer_output)
         if return_loss is False:
-            return logits, present_has_cache
+            return logits
 
         labels = torch.cat((text[:, 1:], image_input_ids), dim=1).contiguous().long()
         logits = rearrange(logits, 'b n c -> b c n')
