@@ -103,7 +103,7 @@ class DalleModel(torch.nn.Module):
             gradient_checkpointing=None,
     ):
         text = input_ids[:, :self.text_seq_length]
-        text_range = torch.arange(self.text_seq_length)
+        text_range = torch.arange(self.text_seq_length).to(self.device)
         text_range += (self.vocab_size - self.text_seq_length)
         text_range = text_range.to(self.device)
         text = torch.where(text == 0, text_range, text)
